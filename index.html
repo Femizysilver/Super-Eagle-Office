@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Eagles Office Platform</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.1.0/font/lucide.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="flex items-center justify-center min-h-screen p-4">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+                    <i class="lucide-layout-dashboard text-white text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900" id="auth-title">Super Eagles Office</h1>
+                <p class="text-slate-500 mt-2" id="auth-subtitle">Welcome back! Please login.</p>
+            </div>
+            
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                    <input type="email" id="user-email" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="you@example.com">
+                </div>
+                
+                <div id="signup-fields" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                        <input type="text" id="user-name" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Account Type</label>
+                        <select id="user-role" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <option value="freelancer">Freelancer (User)</option>
+                            <option value="admin">Platform Manager (Admin)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Secure Vault Password</label>
+                        <input type="password" id="vault-password-signup" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Set a separate vault password">
+                        <p class="text-[10px] text-slate-400 mt-1 italic">This password is required to access your sensitive account details.</p>
+                    </div>
+                </div>
+
+                <button type="submit" id="auth-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all shadow-md shadow-blue-100">
+                    Login
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <button onclick="toggleAuthMode()" id="toggle-auth" class="text-sm text-blue-600 font-medium hover:underline">
+                    Don't have an account? Sign Up
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-app" class="hidden">
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center gap-2">
+                        <i class="lucide-layout-dashboard text-blue-600 text-2xl"></i>
+                        <span class="font-bold text-xl text-slate-900 tracking-tight">Super Eagles <span class="text-blue-600">Office</span></span>
+                        <span id="role-badge" class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"></span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="hidden sm:flex items-center gap-4 mr-4">
+                            <button onclick="showSection('dashboard')" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">Dashboard</button>
+                            <button onclick="showSection('vault')" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1">
+                                <i class="lucide-lock text-xs"></i> Secure Vault
+                            </button>
+                            <button onclick="showSection('account')" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">Account</button>
+                        </div>
+                        <div class="hidden sm:block text-right">
+                            <p id="display-name" class="text-sm font-bold text-slate-900"></p>
+                            <p id="display-email" class="text-xs text-slate-500"></p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <i class="lucide-log-out"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Section -->
+            <div id="section-dashboard" class="space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- Attendance Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-blue-50 rounded-xl">
+                            <i class="lucide-clock text-blue-600"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Attendance</span>
+                    </div>
+                    <div class="space-y-3">
+                        <button onclick="recordAttendance('Present')" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-all shadow-sm shadow-green-100">
+                            Check In
+                        </button>
+                        <button onclick="recordAttendance('Left')" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">
+                            Check Out
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Orders & Projects Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow lg:col-span-2">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-purple-50 rounded-xl">
+                                <i class="lucide-briefcase text-purple-600"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Management</span>
+                                <h3 class="font-bold text-slate-900">Orders & Projects</h3>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="setOrderMode('new')" id="mode-new-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-600 text-white">New Order</button>
+                            <button onclick="setOrderMode('update')" id="mode-update-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Update Existing</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Order Selector (Hidden in New mode) -->
+                        <div id="order-selector-container" class="hidden animate-in fade-in slide-in-from-top-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Select Project to Update</label>
+                            <select id="order-update-selector" onchange="loadOrderData()" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium">
+                                <option value="">-- Choose a Project --</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Service Details</label>
+                                    <input type="text" id="order-service" placeholder="Service (e.g. Web Design)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <div class="w-24">
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Currency</label>
+                                        <select id="order-currency" class="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                                            <option value="$">$ (USD)</option>
+                                            <option value="₦">₦ (NGN)</option>
+                                            <option value="£">£ (GBP)</option>
+                                            <option value="€">€ (EUR)</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Amount</label>
+                                        <input type="number" id="order-amount" placeholder="Amount" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Platform & Duration</label>
+                                    <div class="flex gap-2">
+                                        <select id="order-platform" class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                                            <option value="" disabled selected>Platform</option>
+                                            <option value="Upwork">Upwork</option>
+                                            <option value="Fiverr">Fiverr</option>
+                                            <option value="Direct Client">Direct Client</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <input type="number" id="order-duration" placeholder="Days" class="w-24 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Current Status</label>
+                                    <select id="order-status" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 font-bold text-purple-600">
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Awaiting Feedback">Awaiting Feedback</option>
+                                        <option value="Revision">Revision</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="On Hold">On Hold</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="submitOrder(event)" id="order-submit-btn" class="w-full bg-purple-600 text-white font-bold py-3.5 rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center justify-center gap-2">
+                            <i class="lucide-send text-sm"></i>
+                            <span>Submit New Order</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+                <!-- Admin Controls (Only for Admin) -->
+                <div id="admin-controls" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-red-50 rounded-xl">
+                            <i class="lucide-settings text-red-600"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Admin Controls</span>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-xs text-slate-500 mb-2">Manually trigger performance summaries for all users.</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="triggerSummary('weekly')" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-800 transition-all">
+                                Send Weekly Summary
+                            </button>
+                            <button onclick="triggerSummary('monthly')" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-800 transition-all">
+                                Send Monthly Summary
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secure Vault Section -->
+            <div id="section-vault" class="hidden space-y-8">
+                <!-- Vault Unlock -->
+                <div id="vault-lock-screen" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100 text-center">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <i class="lucide-shield-check text-3xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Secure Vault</h2>
+                    <p class="text-slate-500 text-sm mb-8">Enter your vault password and verify OTP to access sensitive data.</p>
+                    
+                    <div id="vault-step-setup" class="hidden space-y-4">
+                        <p class="text-xs text-slate-500 mb-4">You haven't set up a vault password yet. Please set one now using your app email.</p>
+                        <input type="password" id="vault-setup-pass" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Create Vault Password">
+                        <input type="password" id="vault-setup-confirm" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Confirm Vault Password">
+                        <button onclick="setupVaultPassword(event)" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Set Vault Password</button>
+                    </div>
+
+                    <div id="vault-step-password" class="space-y-4">
+                        <input type="password" id="vault-pass-input" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Vault Password">
+                        <button onclick="requestVaultOTP(event)" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Verify Password & Send OTP</button>
+                    </div>
+
+                    <div id="vault-step-otp" class="hidden space-y-4">
+                        <p class="text-xs text-blue-600 font-bold bg-blue-50 py-2 rounded-lg">OTP sent to your email!</p>
+                        <input type="text" id="vault-otp-input" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center tracking-[1em] font-bold" placeholder="000000">
+                        <button onclick="verifyVaultOTP(event)" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Unlock Vault</button>
+                        <button onclick="resendVaultOTP()" class="text-xs text-blue-600 font-bold hover:underline">Resend OTP Code</button>
+                    </div>
+                </div>
+
+                <!-- Vault Content -->
+                <div id="vault-content" class="hidden space-y-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Account Credentials</h2>
+                            <p id="vault-viewing-label" class="text-xs text-blue-600 font-bold uppercase tracking-widest mt-1">Viewing: Your Own Vault</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div id="admin-team-selector" class="hidden flex items-center gap-2">
+                                <select id="team-member-select" onchange="switchVaultUser()" class="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none">
+                                    <option value="">Select Team Member</option>
+                                </select>
+                            </div>
+                            <button onclick="lockVault()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">Lock Vault</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Add Entry Form -->
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                            <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                                <i class="lucide-plus-circle text-blue-500"></i> Add New Account
+                            </h3>
+                            <input type="text" id="vault-account-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Platform (e.g. Fiverr)">
+                            <input type="email" id="vault-email" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Email Address">
+                            <input type="text" id="vault-username" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Username">
+                            <input type="password" id="vault-password-entry" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Password">
+                            <input type="text" id="vault-security" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Security Question/Answer">
+                            <input type="text" id="vault-location" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm" placeholder="Location/IP">
+                            <button onclick="saveVaultEntry()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Save Securely</button>
+                        </div>
+
+                        <!-- Credentials List -->
+                        <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                                <h3 class="font-bold text-slate-900">Stored Credentials</h3>
+                            </div>
+                            <div id="vault-list" class="divide-y divide-slate-50">
+                                <div class="p-8 text-center text-slate-400 italic text-sm">No credentials stored yet.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log (Shared) -->
+            <div id="section-activity" class="space-y-8">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white gap-4">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-xl">Activity Log</h2>
+                        <p class="text-xs text-slate-500 mt-1">Real-time updates from your Google Sheet</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <select id="activity-filter" onchange="refreshData()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1">Last 1 Month</option>
+                            <option value="2">Last 2 Months</option>
+                            <option value="3">Last 3 Months</option>
+                            <option value="12">Last 1 Year</option>
+                            <option value="all">All Time</option>
+                        </select>
+                        <button onclick="refreshData()" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all">
+                            <i class="lucide-refresh-cw text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em]">
+                            <tr>
+                                <th class="px-8 py-5 font-bold">Type</th>
+                                <th class="px-8 py-5 font-bold">Date/Time</th>
+                                <th class="px-8 py-5 font-bold">Service / Details</th>
+                                <th class="px-8 py-5 font-bold">Status</th>
+                                <th class="px-8 py-5 font-bold">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-body" class="divide-y divide-slate-50 text-sm text-slate-600">
+                            <!-- Data will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+
+            <!-- Account Details Section -->
+            <div id="section-account" class="hidden space-y-8">
+                <div class="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="p-4 bg-slate-900 text-white rounded-2xl">
+                            <i class="lucide-user text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Account Settings</h2>
+                            <p class="text-slate-500 text-sm">Manage your personal information</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                            <input type="email" id="account-email" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-slate-900" placeholder="Enter your email">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Display Name</label>
+                            <input type="text" id="account-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-slate-900" placeholder="Your name">
+                        </div>
+                        <div class="pt-4">
+                            <button onclick="updateAccount()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">Update Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3kzMLkOCiO8sAMJgyws-BEpeqhdiudNx0kSJ7ai1RaxmR2iEaL6fi1i1f2yTcMvYf/exec"; 
+        let isSignup = false;
+        let userData = JSON.parse(localStorage.getItem('userData')) || null;
+        let allActivityData = [];
+        let orderMode = 'new';
+        let selectedOrderOriginalTime = null;
+
+        // Auth Logic
+        function toggleAuthMode() {
+            isSignup = !isSignup;
+            document.getElementById('auth-title').innerText = isSignup ? 'Create Account' : 'Super Eagles Office';
+            document.getElementById('auth-subtitle').innerText = isSignup ? 'Join our freelancer platform' : 'Welcome back! Please login.';
+            document.getElementById('auth-btn').innerText = isSignup ? 'Sign Up' : 'Login';
+            document.getElementById('toggle-auth').innerText = isSignup ? 'Already have an account? Login' : "Don't have an account? Sign Up";
+            document.getElementById('signup-fields').classList.toggle('hidden', !isSignup);
+        }
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('user-email').value;
+            const name = document.getElementById('user-name').value || email.split('@')[0];
+            const role = document.getElementById('user-role').value;
+            const vaultPassword = document.getElementById('vault-password-signup')?.value;
+
+            if (isSignup && (!name || !vaultPassword)) return alert("Please fill all signup fields");
+
+            if (isSignup) {
+                // For signup, we trigger a backend call to create the sheet
+                await callBackend({ action: 'signup', role: role, vaultPassword }, e);
+                userData = { email, name, role };
+            } else {
+                // For login, we check if the user exists and get their role
+                try {
+                    const res = await fetch(`${SCRIPT_URL}?action=login&email=${email}`);
+                    const result = await res.json();
+                    if (result.error) {
+                        alert(result.error);
+                        return;
+                    }
+                    userData = { email, name: result.name || email.split('@')[0], role: result.role };
+                } catch (err) {
+                    console.error("Login failed:", err);
+                    // Fallback locally if backend fails to respond correctly
+                    userData = { email, name, role: 'freelancer' };
+                }
+            }
+            
+            localStorage.setItem('userData', JSON.stringify(userData));
+            showApp();
+        });
+
+        function showSection(section) {
+            document.getElementById('section-dashboard').classList.toggle('hidden', section !== 'dashboard');
+            document.getElementById('section-vault').classList.toggle('hidden', section !== 'vault');
+            document.getElementById('section-account').classList.toggle('hidden', section !== 'account');
+            document.getElementById('section-activity').classList.toggle('hidden', section !== 'dashboard'); // Activity log is part of dashboard view
+            if (section === 'vault') lockVault(); // Always start locked
+            if (section === 'account') {
+                document.getElementById('account-email').value = userData.email;
+                document.getElementById('account-name').value = userData.name;
+            }
+        }
+
+        async function updateAccount() {
+            const email = document.getElementById('account-email').value;
+            const name = document.getElementById('account-name').value;
+            
+            if (!email || !name) return alert("Please fill all fields");
+            
+            userData.email = email;
+            userData.name = name;
+            localStorage.setItem('userData', JSON.stringify(userData));
+            
+            document.getElementById('display-email').innerText = email;
+            document.getElementById('display-name').innerText = name;
+            
+            alert("Profile updated locally. (In a real app, this would sync with the backend)");
+        }
+
+        // Vault Logic
+        let isVaultUnlocked = false;
+        let currentVaultEmail = null;
+
+        async function lockVault() {
+            isVaultUnlocked = false;
+            currentVaultEmail = null;
+            document.getElementById('vault-lock-screen').classList.remove('hidden');
+            document.getElementById('vault-content').classList.add('hidden');
+            
+            // Check if user has a vault password
+            try {
+                const res = await fetch(`/api/vault/check?email=${userData.email}`);
+                const result = await res.json();
+                
+                document.getElementById('vault-step-setup').classList.toggle('hidden', result.hasPassword);
+                document.getElementById('vault-step-password').classList.toggle('hidden', !result.hasPassword);
+                document.getElementById('vault-step-otp').classList.add('hidden');
+            } catch (error) {
+                console.error("Error checking vault status:", error);
+            }
+            
+            document.getElementById('vault-pass-input').value = '';
+            document.getElementById('vault-otp-input').value = '';
+        }
+
+        async function setupVaultPassword(event) {
+            const pass = document.getElementById('vault-setup-pass').value;
+            const confirm = document.getElementById('vault-setup-confirm').value;
+            
+            if (!pass || pass.length < 4) return alert("Password must be at least 4 characters");
+            if (pass !== confirm) return alert("Passwords do not match");
+            
+            const btn = event.currentTarget;
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Setting Password...";
+
+            try {
+                const res = await fetch('/api/vault/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userData.email, password: pass })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    btn.innerText = "Success!";
+                    setTimeout(() => {
+                        // Transition directly to password step to avoid race condition with GAS sync
+                        document.getElementById('vault-step-setup').classList.add('hidden');
+                        document.getElementById('vault-step-password').classList.remove('hidden');
+                        document.getElementById('vault-pass-input').value = '';
+                        alert("Vault password set successfully! Now you can login.");
+                    }, 500);
+                } else {
+                    alert(result.error || "Failed to setup vault password");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            } catch (error) {
+                console.error("Setup error:", error);
+                alert("Failed to setup vault password. Please try again.");
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        async function requestVaultOTP(event) {
+            const pass = document.getElementById('vault-pass-input').value;
+            if (!pass) return alert("Enter vault password");
+            
+            console.log("Requesting vault OTP for:", userData.email);
+            const btn = event.currentTarget;
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Verifying...";
+
+            try {
+                const res = await fetch('/api/vault/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userData.email, password: pass })
+                });
+                console.log("Vault login response status:", res.status);
+                const result = await res.json();
+                console.log("Vault login result:", result);
+                
+                if (result.error) {
+                    alert(result.error);
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    return;
+                }
+                
+                console.log("Transitioning to OTP step...");
+                document.getElementById('vault-step-password').classList.add('hidden');
+                document.getElementById('vault-step-otp').classList.remove('hidden');
+            } catch (error) {
+                console.error("Vault login error:", error);
+                alert("Failed to verify password: " + error.message);
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        async function resendVaultOTP() {
+            try {
+                const res = await fetch('/api/vault/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userData.email })
+                });
+                const result = await res.json();
+                alert(result.message || result.error);
+            } catch (error) {
+                alert("Failed to resend OTP");
+            }
+        }
+
+        async function verifyVaultOTP(event) {
+            const otp = document.getElementById('vault-otp-input').value;
+            if (!otp) return alert("Enter OTP");
+            
+            const btn = event.currentTarget;
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Unlocking...";
+
+            try {
+                const res = await fetch('/api/vault/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userData.email, otp })
+                });
+                const result = await res.json();
+                if (result.error) {
+                    alert(result.error);
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    return;
+                }
+                
+                isVaultUnlocked = true;
+                currentVaultEmail = userData.email;
+                document.getElementById('vault-lock-screen').classList.add('hidden');
+                document.getElementById('vault-content').classList.remove('hidden');
+                
+                if (userData.role === 'admin') {
+                    document.getElementById('admin-team-selector').classList.remove('hidden');
+                    loadTeamMembers();
+                }
+                
+                refreshVaultData();
+            } catch (error) {
+                alert("Failed to verify OTP");
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        async function loadTeamMembers() {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=listUsers`);
+                const result = await res.json();
+                if (result.data) {
+                    const select = document.getElementById('team-member-select');
+                    select.innerHTML = '<option value="' + userData.email + '">Your Own Vault</option>';
+                    result.data.forEach(email => {
+                        if (email !== userData.email) {
+                            const opt = document.createElement('option');
+                            opt.value = email;
+                            opt.innerText = email;
+                            select.appendChild(opt);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load team members:", err);
+            }
+        }
+
+        function switchVaultUser() {
+            const email = document.getElementById('team-member-select').value;
+            if (!email) return;
+            currentVaultEmail = email;
+            document.getElementById('vault-viewing-label').innerText = email === userData.email ? 'Viewing: Your Own Vault' : 'Viewing: ' + email;
+            refreshVaultData();
+        }
+
+        async function saveVaultEntry() {
+            const accountName = document.getElementById('vault-account-name').value;
+            const accountEmail = document.getElementById('vault-email').value;
+            const username = document.getElementById('vault-username').value;
+            const password = document.getElementById('vault-password-entry').value;
+            const securityQuestion = document.getElementById('vault-security').value;
+            const location = document.getElementById('vault-location').value;
+
+            if (!accountName || !username || !password || !accountEmail) return alert("Required fields missing");
+
+            await callBackend({
+                action: 'saveVault',
+                accountName,
+                accountEmail,
+                username,
+                password,
+                securityQuestion,
+                location
+            }, window.event);
+
+            // Reset
+            document.getElementById('vault-account-name').value = '';
+            document.getElementById('vault-email').value = '';
+            document.getElementById('vault-username').value = '';
+            document.getElementById('vault-password-entry').value = '';
+            document.getElementById('vault-security').value = '';
+            document.getElementById('vault-location').value = '';
+            
+            setTimeout(refreshVaultData, 2000);
+        }
+
+        async function refreshVaultData() {
+            if (!isVaultUnlocked || !currentVaultEmail) return;
+            try {
+                const res = await fetch(`${SCRIPT_URL}?email=${currentVaultEmail}`);
+                const result = await res.json();
+                if (result.data) {
+                    const vaultEntries = result.data.filter(row => row.Type === 'Vault Entry');
+                    renderVault(vaultEntries);
+                }
+            } catch (err) {
+                console.error("Vault fetch failed:", err);
+            }
+        }
+
+        function toggleVaultVisibility(id) {
+            const el = document.getElementById(id);
+            if (el.type === "password") {
+                el.type = "text";
+            } else {
+                el.type = "password";
+            }
+        }
+
+        function renderVault(entries) {
+            const list = document.getElementById('vault-list');
+            if (entries.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-slate-400 italic text-sm">No credentials stored yet.</div>';
+                return;
+            }
+
+            list.innerHTML = entries.map((entry, i) => `
+                <div class="p-6 hover:bg-slate-50 transition-colors">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-lg">${entry['Details/Service'] || entry.AccountName || '-'}</h4>
+                            <p class="text-xs text-slate-400 font-medium">${new Date(entry['Date/Time']).toLocaleDateString()}</p>
+                        </div>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-bold uppercase tracking-wider">Secure</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Email Address</label>
+                            <div class="flex items-center gap-2">
+                                <input type="password" readonly value="${entry.AccountEmail || entry.Email || '-'}" id="v-email-${i}" class="bg-transparent border-none text-xs text-slate-600 font-medium outline-none w-full">
+                                <button onclick="toggleVaultVisibility('v-email-${i}')" class="text-slate-400 hover:text-blue-600"><i class="lucide-eye text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Username</label>
+                            <div class="flex items-center gap-2">
+                                <input type="password" readonly value="${entry.Status || entry.Username || '-'}" id="v-user-${i}" class="bg-transparent border-none text-xs text-slate-600 font-medium outline-none w-full">
+                                <button onclick="toggleVaultVisibility('v-user-${i}')" class="text-slate-400 hover:text-blue-600"><i class="lucide-eye text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Password</label>
+                            <div class="flex items-center gap-2">
+                                <input type="password" readonly value="${entry.Amount || entry.Password || '-'}" id="v-pass-${i}" class="bg-transparent border-none text-xs text-slate-600 font-medium outline-none w-full">
+                                <button onclick="toggleVaultVisibility('v-pass-${i}')" class="text-slate-400 hover:text-blue-600"><i class="lucide-eye text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Security Q/A</label>
+                            <div class="text-xs text-slate-600">${entry.Currency || entry['Security Question'] || '-'}</div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Location/IP</label>
+                            <div class="text-xs text-slate-600">${entry.Platform || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showApp() {
+            if (!userData) return;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('display-email').innerText = userData.email;
+            document.getElementById('display-name').innerText = userData.name;
+            
+            const badge = document.getElementById('role-badge');
+            badge.innerText = userData.role;
+            badge.className = `ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${userData.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`;
+            
+            if (userData.role === 'admin') {
+                const adminControls = document.getElementById('admin-controls');
+                if (adminControls) adminControls.classList.remove('hidden');
+            }
+
+            refreshData();
+        }
+
+        async function triggerSummary(type) {
+            if (!confirm(`Are you sure you want to send ${type} summaries to all users?`)) return;
+            
+            try {
+                const response = await fetch('/api/trigger-summary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, secret: 'admin-secret-123' })
+                });
+                const result = await response.json();
+                alert(result.message || result.error);
+            } catch (error) {
+                console.error("Error triggering summary:", error);
+                alert("Failed to trigger summary. Make sure the server is running.");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('userData');
+            location.reload();
+        }
+
+        // API Calls
+        async function callBackend(data, event) {
+            console.log("Calling backend with action:", data.action, "Data:", data);
+            if (SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+                alert("CRITICAL ERROR: You must replace 'YOUR_GOOGLE_SCRIPT_URL_HERE' in index.html (line 196) with your actual Google Apps Script Web App URL!");
+                return;
+            }
+            
+            // Show loading state
+            const btn = event?.target?.closest('button') || (event?.submitter);
+            const originalText = btn ? btn.innerText : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Processing...";
+            }
+
+            try {
+                // We use text/plain to avoid CORS preflight issues with no-cors
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ ...data, email: userData.email, role: userData.role })
+                });
+                console.log("Request sent to Google Sheets successfully (no-cors mode)");
+                setTimeout(refreshData, 2000);
+            } catch (err) {
+                console.error("Backend Connection Error:", err);
+                alert("Failed to connect to Google Sheets. Check if your SCRIPT_URL is correct and the script is deployed as 'Anyone'.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            }
+        }
+
+        async function recordAttendance(status) {
+            await callBackend({ action: 'attendance', details: 'Daily Check', status: status }, window.event);
+        }
+
+        async function submitOrder(event) {
+            const service = document.getElementById('order-service').value;
+            const amount = document.getElementById('order-amount').value;
+            const currency = document.getElementById('order-currency').value;
+            const platform = document.getElementById('order-platform').value;
+            const duration = document.getElementById('order-duration').value;
+            const status = document.getElementById('order-status').value;
+
+            if (!service || !amount || !platform) return alert("Please fill required fields");
+            
+            const payload = { 
+                action: orderMode === 'new' ? 'order' : 'updateStatus', 
+                service, 
+                amount, 
+                currency, 
+                platform, 
+                duration, 
+                status,
+                originalTime: orderMode === 'update' ? selectedOrderOriginalTime : new Date().toISOString()
+            };
+
+            await callBackend(payload, event);
+
+            // Reset
+            if (orderMode === 'new') {
+                document.getElementById('order-service').value = '';
+                document.getElementById('order-amount').value = '';
+                document.getElementById('order-duration').value = '';
+                document.getElementById('order-status').value = 'Pending';
+            } else {
+                setOrderMode('new');
+            }
+        }
+
+        function setOrderMode(mode) {
+            orderMode = mode;
+            const isNew = mode === 'new';
+            
+            document.getElementById('mode-new-btn').className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isNew ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+            document.getElementById('mode-update-btn').className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!isNew ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+            
+            document.getElementById('order-selector-container').classList.toggle('hidden', isNew);
+            document.getElementById('order-submit-btn').querySelector('span').innerText = isNew ? 'Submit New Order' : 'Update Project Status';
+            
+            // Toggle read-only
+            const fields = ['order-service', 'order-amount', 'order-currency', 'order-platform', 'order-duration'];
+            fields.forEach(id => {
+                document.getElementById(id).disabled = !isNew;
+                document.getElementById(id).classList.toggle('opacity-60', !isNew);
+            });
+
+            if (isNew) {
+                fields.forEach(id => document.getElementById(id).value = '');
+                document.getElementById('order-status').value = 'Pending';
+                selectedOrderOriginalTime = null;
+            } else {
+                populateOrderSelector();
+            }
+        }
+
+        function populateOrderSelector() {
+            const selector = document.getElementById('order-update-selector');
+            const orders = getGroupedOrders();
+            
+            selector.innerHTML = '<option value="">-- Choose a Project --</option>';
+            orders.forEach(order => {
+                const opt = document.createElement('option');
+                opt.value = String(order.originalTime);
+                const dateStr = new Date(order.originalTime).toLocaleDateString();
+                opt.innerText = `${order.service} | ${order.platform} | ${dateStr} | ${order.status}`;
+                selector.appendChild(opt);
+            });
+        }
+
+        function loadOrderData() {
+            const originalTime = document.getElementById('order-update-selector').value;
+            if (!originalTime) return;
+            
+            const orders = getGroupedOrders();
+            const order = orders.find(o => String(o.originalTime) === originalTime);
+            
+            if (order) {
+                selectedOrderOriginalTime = originalTime;
+                document.getElementById('order-service').value = order.service;
+                document.getElementById('order-amount').value = order.amount;
+                document.getElementById('order-currency').value = order.currency;
+                document.getElementById('order-platform').value = order.platform;
+                document.getElementById('order-duration').value = order.duration;
+                document.getElementById('order-status').value = order.status;
+            }
+        }
+
+        function getGroupedOrders() {
+            const groups = {};
+            allActivityData.forEach(row => {
+                if (row.Type === 'User Profile' || row.Type === 'Attendance') return;
+                
+                // Use originalTime if available, fallback to Service+Platform as unique key
+                const service = row['Details/Service'] || row.Service || '';
+                const platform = row.Platform || '';
+                const key = row.originalTime || (service + platform);
+                
+                if (!groups[key]) {
+                    groups[key] = {
+                        type: 'Project',
+                        originalTime: row.originalTime || row['Date/Time'],
+                        service: service,
+                        amount: row.Amount,
+                        currency: row.Currency || '$',
+                        platform: platform,
+                        duration: row['Duration (Days)'] || row.Duration || 0,
+                        status: row.Status,
+                        history: []
+                    };
+                }
+                
+                const rowTime = new Date(row['Date/Time']);
+                groups[key].history.push({
+                    status: row.Status,
+                    time: rowTime
+                });
+                
+                // Update to latest status based on timestamp
+                const currentLatestTime = groups[key].history[0].time;
+                let isLatest = true;
+                for(let h of groups[key].history) {
+                    if (new Date(h.time) > rowTime) {
+                        isLatest = false;
+                        break;
+                    }
+                }
+                if (isLatest) {
+                    groups[key].status = row.Status;
+                }
+            });
+            
+            // Sort history for each group (newest first)
+            Object.values(groups).forEach(g => {
+                g.history.sort((a, b) => new Date(b.time) - new Date(a.time));
+            });
+
+            return Object.values(groups);
+        }
+
+        async function refreshData() {
+            if (SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") return;
+            const filterMonths = document.getElementById('activity-filter').value;
+            const body = document.getElementById('activity-body');
+            
+            if (body.innerHTML === "") {
+                body.innerHTML = `<tr><td colspan="5" class="px-8 py-12 text-center text-slate-400">Loading...</td></tr>`;
+            }
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?email=${userData.email}`);
+                const result = await res.json();
+                if (result.data) {
+                    allActivityData = result.data;
+                    renderTable(allActivityData, filterMonths);
+                    if (orderMode === 'update') populateOrderSelector();
+                }
+            } catch (err) {
+                console.warn("Refresh failed:", err);
+            }
+        }
+
+        function renderTable(data, filterMonths = "1") {
+            const body = document.getElementById('activity-body');
+            const now = new Date();
+            
+            // Get grouped projects
+            const groupedProjects = getGroupedOrders();
+            
+            // Get attendance entries
+            const attendanceEntries = allActivityData
+                .filter(row => row.Type === 'Attendance')
+                .map(row => ({
+                    type: 'Attendance',
+                    originalTime: row['Date/Time'],
+                    service: row['Details/Service'] || row.Details || 'Daily Check',
+                    platform: '-',
+                    status: row.Status,
+                    amount: '-',
+                    currency: '',
+                    duration: '-',
+                    history: []
+                }));
+            
+            // Combine and filter
+            let combined = [...groupedProjects, ...attendanceEntries];
+            
+            let filtered = combined.filter(item => {
+                if (filterMonths === "all") return true;
+                const itemDate = new Date(item.originalTime);
+                if (isNaN(itemDate.getTime())) return true;
+                const diffDays = Math.ceil(Math.abs(now - itemDate) / (1000 * 60 * 60 * 24)); 
+                return diffDays <= (parseInt(filterMonths) * 30);
+            }).sort((a, b) => new Date(b.originalTime) - new Date(a.originalTime));
+            
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="px-8 py-12 text-center text-slate-400">No activities found</td></tr>`;
+                return;
+            }
+            
+            body.innerHTML = filtered.map(item => {
+                const isProject = item.type === 'Project';
+                const latestStatusTime = isProject ? item.history[0].time : new Date(item.originalTime);
+                const daysInStatus = Math.floor((now - latestStatusTime) / (1000 * 60 * 60 * 24));
+                
+                return `
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full ${isProject ? 'bg-purple-500' : 'bg-green-500'}"></div>
+                            <span class="font-bold text-slate-900">${item.type}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5 text-slate-400 text-xs font-medium">
+                        <div>${new Date(item.originalTime).toLocaleDateString()}</div>
+                        <div class="text-[10px] opacity-70 mt-0.5">${new Date(item.originalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="text-slate-700 font-medium">${item.service}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase mt-1">${item.platform} ${isProject ? `• ${item.duration} Days` : ''}</div>
+                    </td>
+                    <td class="px-8 py-5 relative">
+                        <div class="${isProject ? 'group/status cursor-pointer' : ''}">
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusClass(item.status)}">
+                                    ${item.status}
+                                </span>
+                                ${isProject ? `<span class="text-[10px] text-slate-400 font-bold">${daysInStatus}d</span>` : ''}
+                            </div>
+                            
+                            ${isProject ? `
+                            <!-- History Dropdown -->
+                            <div class="hidden group-hover/status:block absolute left-8 top-full mt-1 w-48 bg-white border border-slate-100 shadow-xl rounded-xl z-10 p-3 animate-in fade-in zoom-in-95">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 border-b border-slate-50 pb-1">Status History</p>
+                                <div class="space-y-2">
+                                    ${item.history.map((h, i) => {
+                                        const nextTime = i > 0 ? item.history[i-1].time : now;
+                                        const duration = Math.floor((nextTime - h.time) / (1000 * 60 * 60 * 24));
+                                        return `
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-[10px] font-bold text-slate-600">${h.status}</span>
+                                            <span class="text-[9px] text-slate-400">${duration}d</span>
+                                        </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="font-mono font-bold text-blue-600">
+                            ${item.currency}${item.amount}
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function getTypeColor(type) {
+            if (type === 'Project/Order') return 'bg-purple-500';
+            if (type === 'Attendance') return 'bg-green-500';
+            return 'bg-slate-300';
+        }
+
+        function getStatusClass(status) {
+            if (!status) return '';
+            const s = status.toLowerCase();
+            if (s.includes('present') || s.includes('completed')) return 'bg-green-50 text-green-600 border border-green-100';
+            if (s.includes('pending') || s.includes('progress')) return 'bg-yellow-50 text-yellow-600 border border-yellow-100';
+            if (s.includes('cancelled')) return 'bg-red-50 text-red-600 border border-red-100';
+            return 'bg-slate-50 text-slate-500 border border-slate-100';
+        }
+
+        // Init
+        if (userData) showApp();
+    </script>
+</body>
+</html>
