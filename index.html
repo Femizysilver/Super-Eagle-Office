@@ -653,6 +653,7 @@
 
             await callBackend({
                 action: 'saveVault',
+                type: 'Vault Entry',
                 accountName,
                 accountEmail,
                 username,
@@ -923,7 +924,15 @@
         function getGroupedOrders() {
             const groups = {};
             allActivityData.forEach(row => {
-                if (row.Type === 'User Profile' || row.Type === 'Attendance') return;
+                // Filter out non-project entries and sensitive vault data
+                if (row.Type === 'User Profile' || 
+                    row.Type === 'Attendance' || 
+                    row.Type === 'Vault Password' || 
+                    row.Type === 'Vault Entry' ||
+                    row.AccountName === 'VAULT_MASTER_PASSWORD' ||
+                    row['Details/Service'] === 'VAULT_MASTER_PASSWORD' ||
+                    row.Service === 'VAULT_MASTER_PASSWORD'
+                ) return;
                 
                 // Use originalTime if available, fallback to Service+Platform as unique key
                 const service = row['Details/Service'] || row.Service || '';
