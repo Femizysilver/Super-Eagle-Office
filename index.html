@@ -237,13 +237,28 @@
                     
                     <div id="vault-step-setup" class="hidden space-y-4">
                         <p class="text-xs text-slate-500 mb-4">You haven't set up a vault password yet. Please set one now using your app email.</p>
-                        <input type="password" id="vault-setup-pass" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Create Vault Password">
-                        <input type="password" id="vault-setup-confirm" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Confirm Vault Password">
+                        <div class="relative">
+                            <input type="password" id="vault-setup-pass" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Create Vault Password">
+                            <button onclick="toggleVaultVisibility('vault-setup-pass')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                                <i class="lucide-eye text-sm"></i>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="vault-setup-confirm" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Confirm Vault Password">
+                            <button onclick="toggleVaultVisibility('vault-setup-confirm')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                                <i class="lucide-eye text-sm"></i>
+                            </button>
+                        </div>
                         <button onclick="setupVaultPassword(event)" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Set Vault Password</button>
                     </div>
 
                     <div id="vault-step-password" class="space-y-4">
-                        <input type="password" id="vault-pass-input" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Vault Password">
+                        <div class="relative">
+                            <input type="password" id="vault-pass-input" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Vault Password">
+                            <button onclick="toggleVaultVisibility('vault-pass-input')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                                <i class="lucide-eye text-sm"></i>
+                            </button>
+                        </div>
                         <button onclick="requestVaultOTP(event)" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">Verify Password & Send OTP</button>
                     </div>
 
@@ -483,27 +498,41 @@
             
             if (!pass || pass.length < 4) return alert("Password must be at least 4 characters");
             if (pass !== confirm) return alert("Passwords do not match");
+            if (!userData || !userData.email) return alert("User session not found. Please login again.");
             
             const btn = event.currentTarget;
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = "Setting Password...";
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
             try {
                 const res = await fetch('/api/vault/setup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: userData.email, password: pass })
+                    body: JSON.stringify({ email: userData.email, password: pass }),
+                    signal: controller.signal
                 });
-                const result = await res.json();
+                clearTimeout(timeoutId);
+                
+                const text = await res.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Invalid server response format");
+                }
                 
                 if (result.success) {
                     btn.innerText = "Success!";
                     setTimeout(() => {
-                        // Transition directly to password step to avoid race condition with GAS sync
                         document.getElementById('vault-step-setup').classList.add('hidden');
                         document.getElementById('vault-step-password').classList.remove('hidden');
                         document.getElementById('vault-pass-input').value = '';
+                        btn.disabled = false;
+                        btn.innerText = originalText;
                         alert("Vault password set successfully! Now you can login.");
                     }, 500);
                 } else {
@@ -512,8 +541,10 @@
                     btn.innerText = originalText;
                 }
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error("Setup error:", error);
-                alert("Failed to setup vault password. Please try again.");
+                const msg = error.name === 'AbortError' ? "Request timed out. Please try again." : error.message;
+                alert("Failed to setup vault password: " + msg);
                 btn.disabled = false;
                 btn.innerText = originalText;
             }
@@ -522,6 +553,7 @@
         async function requestVaultOTP(event) {
             const pass = document.getElementById('vault-pass-input').value;
             if (!pass) return alert("Enter vault password");
+            if (!userData || !userData.email) return alert("User session not found. Please login again.");
             
             console.log("Requesting vault OTP for:", userData.email);
             const btn = event.currentTarget;
@@ -529,15 +561,27 @@
             btn.disabled = true;
             btn.innerText = "Verifying...";
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
             try {
                 const res = await fetch('/api/vault/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: userData.email, password: pass })
+                    body: JSON.stringify({ email: userData.email, password: pass }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+                
                 console.log("Vault login response status:", res.status);
-                const result = await res.json();
-                console.log("Vault login result:", result);
+                const text = await res.text();
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    throw new Error("Invalid server response format");
+                }
                 
                 if (result.error) {
                     alert(result.error);
@@ -550,8 +594,10 @@
                 document.getElementById('vault-step-password').classList.add('hidden');
                 document.getElementById('vault-step-otp').classList.remove('hidden');
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error("Vault login error:", error);
-                alert("Failed to verify password: " + error.message);
+                const msg = error.name === 'AbortError' ? "Request timed out. Please try again." : error.message;
+                alert("Failed to verify password: " + msg);
                 btn.disabled = false;
                 btn.innerText = originalText;
             }

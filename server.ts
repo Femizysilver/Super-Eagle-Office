@@ -29,14 +29,33 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER || "femizysilver@gmail.com",
     pass: process.env.SMTP_PASS || "zcng lkau mcty kvtm",
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
+
+// Helper for fetch with timeout
+async function fetchWithTimeout(url: string, options: any = {}) {
+  const { timeout = 15000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
 
 // Helper to fetch data from Google Sheets
 async function fetchAllData() {
   try {
-    // We'll try to fetch all data. In a real scenario, the GAS script should support an action to get all data for all users.
-    // Assuming the GAS script can return all data if we don't specify an email or use a special action.
-    const response = await fetch(`${SCRIPT_URL}?action=allData`);
+    const response = await fetchWithTimeout(`${SCRIPT_URL}?action=allData`);
     const result = await response.json();
     return result.data || [];
   } catch (error) {
@@ -48,7 +67,7 @@ async function fetchAllData() {
 // Helper to fetch user list
 async function fetchUserList() {
   try {
-    const response = await fetch(`${SCRIPT_URL}?action=listUsers`);
+    const response = await fetchWithTimeout(`${SCRIPT_URL}?action=listUsers`);
     const result = await response.json();
     return result.data || [];
   } catch (error) {
@@ -196,26 +215,44 @@ const tempOTPs = new Map<string, { otp: string; expires: number }>();
 async function getVaultPassword(email: string) {
   try {
     console.log(`Fetching vault password for ${email}...`);
-    // Try both with email param and without, just in case GAS doesn't support it
-    const response = await fetch(`${SCRIPT_URL}?action=allData&email=${email}`);
+    const response = await fetchWithTimeout(`${SCRIPT_URL}?action=allData&email=${email}`);
     const result = await response.json();
     const allData = result.data || [];
     
     console.log(`Fetched ${allData.length} rows for vault check`);
     
     // Find the vault row specifically for this email
-    const vaultRow = allData.find((row: any) => 
-      (row.Email === email || row.email === email) && 
-      (row.Type === "Vault Password" || row.AccountName === "VAULT_MASTER_PASSWORD" || row['Details/Service'] === "VAULT_MASTER_PASSWORD")
-    );
+    const vaultRow = allData.find((row: any) => {
+      const rowEmail = (row.Email || row.email || row['Email Address'] || '').toString().toLowerCase().trim();
+      const targetEmail = email.toLowerCase().trim();
+      
+      const isVaultRow = (
+        row.Type === "Vault Password" || 
+        row.type === "Vault Password" ||
+        row.AccountName === "VAULT_MASTER_PASSWORD" || 
+        row.accountName === "VAULT_MASTER_PASSWORD" ||
+        row['Details/Service'] === "VAULT_MASTER_PASSWORD" ||
+        row.Service === "VAULT_MASTER_PASSWORD" ||
+        row.service === "VAULT_MASTER_PASSWORD"
+      );
+      
+      return rowEmail === targetEmail && isVaultRow;
+    });
     
     if (vaultRow) {
-      const pass = (vaultRow.Details || vaultRow.Password || vaultRow.Amount || vaultRow.Status);
-      console.log(`Found vault password row for ${email}`);
+      const pass = (
+        vaultRow.Password || 
+        vaultRow.password || 
+        vaultRow.Amount || 
+        vaultRow.amount || 
+        vaultRow.Status || 
+        vaultRow.status || 
+        vaultRow.Details || 
+        vaultRow.details ||
+        vaultRow['Details/Service']
+      );
       return pass;
     }
-    
-    console.warn(`No vault password row found for ${email} in ${allData.length} rows`);
     return null;
   } catch (error) {
     console.error("Error fetching vault password:", error);
@@ -245,7 +282,7 @@ app.post("/api/vault/setup", async (req, res) => {
   // Save to Google Sheets via GAS
   try {
     console.log(`Setting up vault password for ${email}...`);
-    const response = await fetch(SCRIPT_URL, {
+    const response = await fetchWithTimeout(SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -286,8 +323,12 @@ app.post("/api/vault/login", async (req, res) => {
     return res.status(401).json({ error: "No vault password found. Please set one first." });
   }
 
-  if (storedPassword.toString().trim() !== password.toString().trim()) {
-    console.error(`Invalid vault password for ${email}. Stored: ${storedPassword.toString().substring(0, 1)}***`);
+  const cleanStored = storedPassword.toString().trim();
+  const cleanInput = password.toString().trim();
+
+  if (cleanStored !== cleanInput) {
+    console.error(`Invalid vault password for ${email}.`);
+    console.log(`DEBUG: Stored: "${cleanStored}" vs Input: "${cleanInput}"`);
     return res.status(401).json({ error: "Invalid vault password" });
   }
   
